@@ -17,20 +17,21 @@ function UserContext({children}) {
         }
     }
 
-    const getGeminiResponse=async (command)=>{
-try {
-  const result=await axios.post(`${serverUrl}/api/user/asktoassistant`,{command},{withCredentials:true})
-  return result.data
-} catch (error) {
-  console.log(error)
-}
+    const getAiResponse=async (command)=>{
+        try {
+            const result=await axios.post(`${serverUrl}/api/user/asktoassistant`,{command},{withCredentials:true})
+            return result.data
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     useEffect(()=>{
-handleCurrentUser()
+        handleCurrentUser()
     },[])
+
     const value={
-serverUrl,userData,setUserData,backendImage,setBackendImage,frontendImage,setFrontendImage,selectedImage,setSelectedImage,getGeminiResponse
+        serverUrl,userData,setUserData,backendImage,setBackendImage,frontendImage,setFrontendImage,selectedImage,setSelectedImage,getAiResponse
     }
   return (
     <div>
