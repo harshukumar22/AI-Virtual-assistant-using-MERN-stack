@@ -2,6 +2,40 @@ import uploadOnCloudinary from "../config/cloudinary.js"
 import grokResponse from "../grok.js"
 import User from "../models/user.model.js"
 import moment from "moment"
+import https from "https"
+
+// Fetch first YouTube video ID for a search query (no API key needed)
+export const getYoutubeVideoId = async (req, res) => {
+    try {
+        const { query } = req.query;
+        if (!query) return res.status(400).json({ error: "query required" });
+
+        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+
+        const html = await new Promise((resolve, reject) => {
+            https.get(searchUrl, {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept-Language": "en-US,en;q=0.9"
+                }
+            }, (response) => {
+                let data = "";
+                response.on("data", chunk => data += chunk);
+                response.on("end", () => resolve(data));
+            }).on("error", reject);
+        });
+
+        // Extract first video ID from YouTube's search results page
+        const match = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+        if (match && match[1]) {
+            return res.json({ videoId: match[1] });
+        }
+        return res.status(404).json({ error: "No video found" });
+    } catch (error) {
+        console.error("YouTube fetch error:", error.message);
+        return res.status(500).json({ error: "Failed to fetch video ID" });
+    }
+}
 
 export const getCurrentUser = async (req, res) => {
     try {
@@ -85,6 +119,7 @@ export const askToAssistant = async (req, res) => {
             case 'instagram-open':
             case 'facebook-open':
             case 'weather-show':
+            case 'website-open':
                 return res.json({
                     type,
                     userInput: result.userInput,
