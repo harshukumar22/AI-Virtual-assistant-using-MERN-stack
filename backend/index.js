@@ -7,24 +7,23 @@ import cors from "cors"
 import cookieParser from "cookie-parser"
 import userRouter from "./routes/user.routes.js"
 
+const app = express()
 
-
-const app=express()
 app.use(cors({
-  origin: "https://ai-virtual-assistant-using-mern-stack-mt7njokdx.vercel.app", // 👈 exact Vercel URL, no trailing slash
-  credentials: true,                      // 👈 required for withCredentials
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
-}));
-const port=process.env.PORT || 5000
+}))
+
 app.use(express.json())
 app.use(cookieParser())
-app.use("/api/auth",authRouter)
-app.use("/api/user",userRouter)
+app.use("/api/auth", authRouter)
+app.use("/api/user", userRouter)
 
+const port = process.env.PORT || 8000
 
-app.listen(port,()=>{
-    connectDb()
-    console.log("server started")
+app.listen(port, () => {
+  connectDb()
+  console.log("server started on port", port)
 })
-

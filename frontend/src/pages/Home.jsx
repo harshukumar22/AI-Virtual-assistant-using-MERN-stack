@@ -67,13 +67,21 @@ function Home() {
     const query = encodeURIComponent(userInput);
     switch(type) {
       case 'google-search': return `https://www.google.com/search?q=${query}`;
-      case 'youtube-search':
-      case 'youtube-play': return `https://www.youtube.com/results?search_query=${query}`;
+      case 'youtube-search': return `https://www.youtube.com/results?search_query=${query}`;
       case 'youtube-open': return `https://www.youtube.com/`;
       case 'calculator-open': return `https://www.google.com/search?q=calculator`;
       case 'instagram-open': return `https://www.instagram.com/`;
       case 'facebook-open': return `https://www.facebook.com/`;
       case 'weather-show': return `https://www.google.com/search?q=weather`;
+      case 'website-open': {
+        let site = userInput.trim();
+        site = site.replace(/^(open|go to|take me to|navigate to|visit)\s+/i, '').trim();
+        if (!site.startsWith('http://') && !site.startsWith('https://')) {
+          if (!site.includes('.')) site = `https://www.${site}.com`;
+          else site = `https://${site}`;
+        }
+        return site;
+      }
       default: return null;
     }
   }
@@ -162,12 +170,32 @@ function Home() {
 
         const data = await getAiResponse(transcript);
 
-        // Set URL on already-opened window
-        const url = getUrlForType(data.type, data.userInput);
-        if (url && newWindow) {
-          newWindow.location.href = url;
-        } else if (newWindow) {
-          newWindow.close(); // close if no URL needed (e.g. get-time, general)
+        if (data.type === 'youtube-play') {
+          // Fetch real first video ID from backend, then open the watch URL directly
+          try {
+            const res = await axios.get(`${serverUrl}/api/user/youtube-video-id`, {
+              params: { query: data.userInput },
+              withCredentials: true
+            });
+            const videoId = res.data.videoId;
+            if (videoId && newWindow) {
+              newWindow.location.href = `https://www.youtube.com/watch?v=${videoId}&autoplay=1`;
+            } else if (newWindow) {
+              // Fallback to search if no ID found
+              newWindow.location.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(data.userInput)}`;
+            }
+          } catch {
+            if (newWindow) {
+              newWindow.location.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(data.userInput)}`;
+            }
+          }
+        } else {
+          const url = getUrlForType(data.type, data.userInput);
+          if (url && newWindow) {
+            newWindow.location.href = url;
+          } else if (newWindow) {
+            newWindow.close();
+          }
         }
 
         handleCommand(data);
